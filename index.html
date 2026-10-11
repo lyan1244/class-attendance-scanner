@@ -294,5 +294,78 @@
       loginMessage.className = "info";
     });
   </script>
+    const showAddStudentButton =
+      document.getElementById("showAddStudentButton");
+    const addStudentSection =
+      document.getElementById("addStudentSection");
+    const addStudentForm =
+      document.getElementById("addStudentForm");
+    const studentName =
+      document.getElementById("studentName");
+    const studentPhone =
+      document.getElementById("studentPhone");
+    const saveStudentButton =
+      document.getElementById("saveStudentButton");
+    const cancelAddStudentButton =
+      document.getElementById("cancelAddStudentButton");
+    const studentMessage =
+      document.getElementById("studentMessage");
+
+    showAddStudentButton.addEventListener("click", () => {
+      addStudentSection.hidden = false;
+      studentMessage.textContent =
+        "Enter the student's information.";
+      studentMessage.className = "info";
+    });
+
+    cancelAddStudentButton.addEventListener("click", () => {
+      addStudentForm.reset();
+      addStudentSection.hidden = true;
+    });
+
+    addStudentForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const name = studentName.value.trim();
+      const phone = studentPhone.value.trim();
+
+      if (!name || !phone) {
+        studentMessage.textContent =
+          "Please enter the name and phone number.";
+        studentMessage.className = "error";
+        return;
+      }
+
+      saveStudentButton.disabled = true;
+      studentMessage.textContent = "Adding student...";
+      studentMessage.className = "info";
+
+      try {
+        const result = await requestServer({
+          action: "addStudent",
+          pin: enteredCode,
+          name: name,
+          phone: phone
+        });
+
+        if (result.success) {
+          studentMessage.textContent =
+            result.name + " was added successfully! " +
+            "The QR code is available in Google Sheets.";
+          studentMessage.className = "success";
+          addStudentForm.reset();
+        } else {
+          studentMessage.textContent =
+            result.message || "Could not add student.";
+          studentMessage.className = "error";
+        }
+      } catch (error) {
+        studentMessage.textContent = error.message;
+        studentMessage.className = "error";
+      } finally {
+        saveStudentButton.disabled = false;
+      }
+    });
+
 </body>
 </html>
