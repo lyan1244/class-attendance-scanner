@@ -311,12 +311,23 @@
     const studentMessage =
       document.getElementById("studentMessage");
 
+
     showAddStudentButton.addEventListener("click", () => {
-      addStudentSection.hidden = false;
-      studentMessage.textContent =
-        "Enter the student's information.";
-      studentMessage.className = "info";
+      const isOpening = addStudentSection.hidden;
+    
+      addStudentSection.hidden = !isOpening;
+    
+      if (isOpening) {
+        showAddStudentButton.textContent = "✖ Close Form";
+        studentMessage.textContent =
+          "Enter the student's information.";
+        studentMessage.className = "info";
+      } else {
+        showAddStudentButton.textContent = "➕ Add New Student";
+        addStudentForm.reset();
+      }
     });
+
 
     cancelAddStudentButton.addEventListener("click", () => {
       addStudentForm.reset();
