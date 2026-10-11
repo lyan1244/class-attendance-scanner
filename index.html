@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Class Attendance Scanner</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -15,8 +17,12 @@
       color: #222;
       text-align: center;
     }
-    h1 { color: #6b4eff; }
-    select, button {
+
+    h1 {
+      color: #6b4eff;
+    }
+
+    input, select, button {
       box-sizing: border-box;
       width: 100%;
       padding: 14px;
@@ -24,59 +30,143 @@
       border-radius: 10px;
       font-size: 16px;
     }
-    select { background: white; border: 1px solid #ccc; }
+
+    input, select {
+      background: white;
+      border: 1px solid #ccc;
+    }
+
     button {
       border: 0;
       background: #6b4eff;
       color: white;
       cursor: pointer;
     }
-    button:disabled { background: #aaa; }
-    #reader { margin-top: 20px; }
-    #message {
+
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    #reader {
+      margin-top: 20px;
+    }
+
+    #message, #loginMessage {
       margin-top: 16px;
       padding: 12px;
       border-radius: 10px;
       overflow-wrap: anywhere;
     }
-    .info { background: #e8e3ff; }
-    .error { background: #ffe0e0; }
-    .success { background: #d9f7df; }
+
+    .info {
+      background: #e8e3ff;
+    }
+
+    .error {
+      background: #ffe0e0;
+    }
+
+    .success {
+      background: #d9f7df;
+    }
   </style>
 </head>
+
 <body>
   <h1>Class Attendance 📚</h1>
-  <p>Select the class before scanning.</p>
 
-  <select id="classSelect">
-    <option value="">Select a class</option>
-    <option value="10">10:00 AM</option>
-    <option value="12">12:00 PM</option>
-    <option value="4">4:00 PM</option>
-    <option value="6">6:00 PM</option>
-  </select>
+  <!-- Login screen -->
+  <section id="loginSection">
+    <p>Enter the coach access code to continue.</p>
 
-  <button id="startButton">Start Scanning</button>
-  <button id="stopButton" disabled>Stop Camera</button>
+    <form id="loginForm">
+      <input
+        type="password"
+        id="accessCode"
+        placeholder="Enter access code"
+        autocomplete="current-password"
+        required
+      >
 
-  <div id="reader"></div>
-  <div id="message" class="info">
-    Choose a class to get started.
-  </div>
+      <button type="submit">Enter</button>
+    </form>
+
+    <div id="loginMessage" class="info">
+      Please enter your access code.
+    </div>
+  </section>
+
+  <!-- Scanner screen -->
+  <section id="scannerSection" hidden>
+    <p>Select the class before scanning.</p>
+
+    <select id="classSelect">
+      <option value="">Select a class</option>
+      <option value="10">10:00 AM</option>
+      <option value="12">12:00 PM</option>
+      <option value="4">4:00 PM</option>
+      <option value="6">6:00 PM</option>
+    </select>
+
+    <button id="startButton">Start Scanning</button>
+    <button id="stopButton" disabled>Stop Camera</button>
+    <button id="logoutButton">Log Out</button>
+
+    <div id="reader"></div>
+
+    <div id="message" class="info">
+      Choose a class to get started.
+    </div>
+  </section>
 
   <script>
+    const loginForm = document.getElementById("loginForm");
+    const accessCode = document.getElementById("accessCode");
+    const loginSection = document.getElementById("loginSection");
+    const scannerSection = document.getElementById("scannerSection");
+    const loginMessage = document.getElementById("loginMessage");
+
     const classSelect = document.getElementById("classSelect");
     const startButton = document.getElementById("startButton");
     const stopButton = document.getElementById("stopButton");
+    const logoutButton = document.getElementById("logoutButton");
     const message = document.getElementById("message");
 
     let scanner = null;
     let busy = false;
 
+    // Temporary session state only.
+    // This does NOT verify the code with Google Apps Script yet.
+    let enteredCode = "";
+
     function showMessage(text, type = "info") {
       message.textContent = text;
       message.className = type;
     }
+
+    loginForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const code = accessCode.value.trim();
+
+      if (!code) {
+        loginMessage.textContent = "Please enter your access code.";
+        loginMessage.className = "error";
+        return;
+      }
+
+      // This only opens the scanner interface.
+      // Server-side verification must be added before attendance
+      // recording is enabled.
+      enteredCode = code;
+
+      loginSection.hidden = true;
+      scannerSection.hidden = false;
+
+      accessCode.value = "";
+      showMessage("Choose a class to get started.", "info");
+    });
 
     startButton.addEventListener("click", async () => {
       if (!classSelect.value) {
@@ -90,11 +180,13 @@
         scanner = new Html5Qrcode("reader");
         startButton.disabled = true;
         stopButton.disabled = false;
+
         showMessage("Requesting camera access...");
 
         await scanner.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 230, height: 230 } },
+
           (decodedText) => {
             if (busy) return;
             busy = true;
@@ -104,7 +196,9 @@
               "success"
             );
 
-            // Do not send QR IDs to an unconfigured endpoint.
+            // Attendance registration is not connected yet.
+            // Do not send QR IDs or the access code to the server
+            // until server-side verification is implemented.
             console.log("QR scanned; class:", classSelect.value);
 
             setTimeout(() => {
@@ -112,6 +206,7 @@
               showMessage("Ready to scan the next QR code.");
             }, 2500);
           },
+
           () => {}
         );
 
@@ -120,11 +215,12 @@
         scanner = null;
         startButton.disabled = false;
         stopButton.disabled = true;
+
         showMessage("Camera error: " + error, "error");
       }
     });
 
-    stopButton.addEventListener("click", async () => {
+    async function stopScanner() {
       if (scanner) {
         try {
           await scanner.stop();
@@ -132,13 +228,32 @@
         } catch (error) {
           console.error(error);
         }
+
         scanner = null;
       }
 
       startButton.disabled = false;
       stopButton.disabled = true;
+    }
+
+    stopButton.addEventListener("click", async () => {
+      await stopScanner();
       showMessage("Camera stopped.");
+    });
+
+    logoutButton.addEventListener("click", async () => {
+      await stopScanner();
+
+      enteredCode = "";
+      classSelect.value = "";
+
+      scannerSection.hidden = true;
+      loginSection.hidden = false;
+
+      loginMessage.textContent = "You have logged out.";
+      loginMessage.className = "info";
     });
   </script>
 </body>
 </html>
+```
