@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Class Attendance Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 24px;
+      background: #f7f5ff;
+      color: #222;
+      text-align: center;
+    }
+    h1 { color: #6b4eff; }
+    select, button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    select { background: white; border: 1px solid #ccc; }
+    button {
+      border: 0;
+      background: #6b4eff;
+      color: white;
+      cursor: pointer;
+    }
+    button:disabled { background: #aaa; }
+    #reader { margin-top: 20px; }
+    #message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      overflow-wrap: anywhere;
+    }
+    .info { background: #e8e3ff; }
+    .error { background: #ffe0e0; }
+    .success { background: #d9f7df; }
+  </style>
+</head>
+<body>
+  <h1>Class Attendance 📚</h1>
+  <p>Select the class before scanning.</p>
+
+  <select id="classSelect">
+    <option value="">Select a class</option>
+    <option value="10">10:00 AM</option>
+    <option value="12">12:00 PM</option>
+    <option value="4">4:00 PM</option>
+    <option value="6">6:00 PM</option>
+  </select>
+
+  <button id="startButton">Start Scanning</button>
+  <button id="stopButton" disabled>Stop Camera</button>
+
+  <div id="reader"></div>
+  <div id="message" class="info">
+    Choose a class to get started.
+  </div>
+
+  <script>
+    const classSelect = document.getElementById("classSelect");
+    const startButton = document.getElementById("startButton");
+    const stopButton = document.getElementById("stopButton");
+    const message = document.getElementById("message");
+
+    let scanner = null;
+    let busy = false;
+
+    function showMessage(text, type = "info") {
+      message.textContent = text;
+      message.className = type;
+    }
+
+    startButton.addEventListener("click", async () => {
+      if (!classSelect.value) {
+        showMessage("Please select a class first.", "error");
+        return;
+      }
+
+      if (scanner) return;
+
+      try {
+        scanner = new Html5Qrcode("reader");
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        showMessage("Requesting camera access...");
+
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 230, height: 230 } },
+          (decodedText) => {
+            if (busy) return;
+            busy = true;
+
+            showMessage(
+              "QR scanned successfully. Attendance is not recorded yet.",
+              "success"
+            );
+
+            // Do not send QR IDs to an unconfigured endpoint.
+            console.log("QR scanned; class:", classSelect.value);
+
+            setTimeout(() => {
+              busy = false;
+              showMessage("Ready to scan the next QR code.");
+            }, 2500);
+          },
+          () => {}
+        );
+
+        showMessage("Camera ready. Scan a student's QR code.");
+      } catch (error) {
+        scanner = null;
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        showMessage("Camera error: " + error, "error");
+      }
+    });
+
+    stopButton.addEventListener("click", async () => {
+      if (scanner) {
+        try {
+          await scanner.stop();
+          await scanner.clear();
+        } catch (error) {
+          console.error(error);
+        }
+        scanner = null;
+      }
+
+      startButton.disabled = false;
+      stopButton.disabled = true;
+      showMessage("Camera stopped.");
+    });
+  </script>
+</body>
+</html>
