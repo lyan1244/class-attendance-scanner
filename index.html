@@ -67,6 +67,41 @@
     <button id="startButton">Start Scanning</button>
     <button id="stopButton" disabled>Stop Camera</button>
     <button id="logoutButton">Log Out</button>
+    
+    <button id="showAddStudentButton">➕ Add New Student</button>
+    
+    <section id="addStudentSection" hidden>
+      <h2>Add New Student</h2>
+    
+      <form id="addStudentForm">
+        <input
+          type="text"
+          id="studentName"
+          placeholder="Student full name in English"
+          required
+        >
+    
+        <input
+          type="tel"
+          id="studentPhone"
+          placeholder="Student phone number"
+          required
+        >
+    
+        <button type="submit" id="saveStudentButton">
+          Save Student
+        </button>
+    
+        <button type="button" id="cancelAddStudentButton">
+          Cancel
+        </button>
+      </form>
+    
+      <div id="studentMessage" class="info" role="status">
+        Enter the student's information.
+      </div>
+    </section>
+
     <div id="reader"></div>
     <div id="message" class="info">Choose a class to get started.</div>
   </section>
