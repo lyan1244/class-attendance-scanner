@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,105 +5,138 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Class Attendance Scanner</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
-  
   <style>
+    :root {
+      --brand: #6b4eff;
+      --brand-dark: #5538e0;
+      --bg: #f7f5ff;
+      --ink: #222;
+      --line: #d9d4f0;
+    }
+    * { box-sizing: border-box; }
     body {
       font-family: Arial, sans-serif;
       max-width: 480px;
       margin: 0 auto;
-      padding: 24px;
-      background: #f7f5ff;
-      color: #222;
-      text-align: center;
+      padding: 20px 20px 40px;
+      background: var(--bg);
+      color: var(--ink);
     }
-    h1 { color: #6b4eff; }
+    h1 { color: var(--brand); font-size: 24px; margin: 0; }
+    h2 { font-size: 18px; margin: 0 0 4px; }
+    p { margin: 0 0 12px; }
+    .muted { color: #666; font-size: 14px; }
+
     input, select, button {
-      box-sizing: border-box;
       width: 100%;
       padding: 14px;
-      margin: 10px 0;
       border-radius: 10px;
       font-size: 16px;
+      font-family: inherit;
     }
-    input, select { background: white; border: 1px solid #ccc; }
-    button { border: 0; background: #6b4eff; color: white; cursor: pointer; }
-    button:disabled { background: #aaa; cursor: not-allowed; }
-    #reader { margin-top: 20px; }
-    #message, #loginMessage {
-      margin-top: 16px;
-      padding: 12px;
-      border-radius: 10px;
-      overflow-wrap: anywhere;
+    input, select { background: #fff; border: 1px solid var(--line); margin-bottom: 12px; }
+    input:focus, select:focus, button:focus-visible {
+      outline: 3px solid rgba(107, 78, 255, .35);
+      outline-offset: 1px;
+    }
+    button { border: 0; background: var(--brand); color: #fff; cursor: pointer; }
+    button:hover:not(:disabled) { background: var(--brand-dark); }
+    button:disabled { background: #b5b5b5; cursor: not-allowed; }
+    button.secondary {
+      background: #fff; color: var(--brand); border: 1px solid var(--brand);
+    }
+    button.secondary:hover:not(:disabled) { background: #efebff; }
+    button.secondary:disabled { color: #999; border-color: #ccc; background: #fff; }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 18px;
+    }
+    #logoutButton {
+      width: auto; padding: 8px 14px; font-size: 14px;
+      background: transparent; color: #666; border: 1px solid var(--line);
+    }
+    #logoutButton:hover { background: #fff; }
+
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+      background: #e8e3ff; padding: 4px; border-radius: 12px; margin-bottom: 18px;
+    }
+    .tab {
+      background: transparent; color: #4a3bb0; padding: 11px; font-weight: bold;
+    }
+    .tab:hover:not(:disabled) { background: rgba(255,255,255,.6); }
+    .tab[aria-selected="true"] {
+      background: #fff; color: var(--brand); box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    }
+
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+    .btn-row button { margin: 0; }
+
+    #reader { margin-top: 16px; border-radius: 12px; overflow: hidden; }
+    #loginSection { text-align: center; }
+    #message, #loginMessage, #studentMessage {
+      margin-top: 14px; padding: 12px; border-radius: 10px;
+      overflow-wrap: anywhere; text-align: center;
     }
     .info { background: #e8e3ff; }
     .error { background: #ffe0e0; }
     .success { background: #d9f7df; }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
-  <h1>Class Attendance 📚</h1>
+  <div class="topbar">
+    <h1>Class Attendance 📚</h1>
+    <button id="logoutButton" hidden>Log out</button>
+  </div>
 
   <section id="loginSection">
     <p>Enter the coach access code to continue.</p>
     <form id="loginForm">
-      <input type="password" id="accessCode"
-        placeholder="Enter access code" required>
+      <input type="password" id="accessCode" placeholder="Enter access code" required>
       <button type="submit" id="loginButton">Enter</button>
     </form>
-    <div id="loginMessage" class="info">
-      Please enter your access code.
-    </div>
+    <div id="loginMessage" class="info" role="status">Please enter your access code.</div>
   </section>
 
   <section id="scannerSection" hidden>
-    <p>Select the class before scanning.</p>
-    <select id="classSelect">
-      <option value="">Select a class</option>
-      <option value="10">10:00 AM</option>
-      <option value="12">12:00 PM</option>
-      <option value="4">4:00 PM</option>
-      <option value="6">6:00 PM</option>
-    </select>
-    <button id="startButton">Start Scanning</button>
-    <button id="stopButton" disabled>Stop Camera</button>
-    <button id="logoutButton">Log Out</button>
-    
-    <button id="showAddStudentButton">➕ Add New Student</button>
-    
-    <section id="addStudentSection" hidden>
-      <h2>Add New Student</h2>
-    
-      <form id="addStudentForm">
-        <input
-          type="text"
-          id="studentName"
-          placeholder="Student full name in English"
-          required
-        >
-    
-        <input
-          type="tel"
-          id="studentPhone"
-          placeholder="Student phone number"
-          required
-        >
-    
-        <button type="submit" id="saveStudentButton">
-          Save Student
-        </button>
-    
-        <button type="button" id="cancelAddStudentButton">
-          Cancel
-        </button>
-      </form>
-    
-      <div id="studentMessage" class="info" role="status">
-        Enter the student's information.
-      </div>
-    </section>
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tabScan" role="tab" aria-selected="true">Scan</button>
+      <button class="tab" id="tabAdd" role="tab" aria-selected="false">Add student</button>
+    </div>
 
-    <div id="reader"></div>
-    <div id="message" class="info">Choose a class to get started.</div>
+    <!-- Scan tab -->
+    <div id="scanPanel" role="tabpanel">
+      <select id="classSelect" aria-label="Class time">
+        <option value="">Select a class</option>
+        <option value="10">10:00 AM</option>
+        <option value="12">12:00 PM</option>
+        <option value="4">4:00 PM</option>
+        <option value="6">6:00 PM</option>
+      </select>
+      <div class="btn-row">
+        <button id="startButton">Start scanning</button>
+        <button id="stopButton" class="secondary" disabled>Stop camera</button>
+      </div>
+      <div id="reader"></div>
+      <div id="message" class="info" role="status">Choose a class to get started.</div>
+    </div>
+
+    <!-- Add student tab -->
+    <div id="addPanel" role="tabpanel" hidden>
+      <h2>New student</h2>
+      <p class="muted">The QR code is created in Google Sheets after saving.</p>
+      <form id="addStudentForm">
+        <input type="text" id="studentName" placeholder="Student full name in English" required>
+        <input type="tel" id="studentPhone" placeholder="Student phone number" required>
+        <div class="btn-row">
+          <button type="submit" id="saveStudentButton">Save student</button>
+          <button type="button" id="cancelAddStudentButton" class="secondary">Clear</button>
+        </div>
+      </form>
+      <div id="studentMessage" class="info" role="status">Enter the student's information.</div>
+    </div>
   </section>
 
   <script>
@@ -123,6 +155,18 @@
     const logoutButton = document.getElementById("logoutButton");
     const message = document.getElementById("message");
 
+    const tabScan = document.getElementById("tabScan");
+    const tabAdd = document.getElementById("tabAdd");
+    const scanPanel = document.getElementById("scanPanel");
+    const addPanel = document.getElementById("addPanel");
+
+    const addStudentForm = document.getElementById("addStudentForm");
+    const studentName = document.getElementById("studentName");
+    const studentPhone = document.getElementById("studentPhone");
+    const saveStudentButton = document.getElementById("saveStudentButton");
+    const cancelAddStudentButton = document.getElementById("cancelAddStudentButton");
+    const studentMessage = document.getElementById("studentMessage");
+
     let scanner = null;
     let busy = false;
     let enteredCode = "";
@@ -135,10 +179,7 @@
     function requestServer(params) {
       return new Promise((resolve, reject) => {
         const callback = "attendanceCallback";
-        const query = new URLSearchParams({
-          ...params,
-          callback
-        });
+        const query = new URLSearchParams({ ...params, callback });
 
         const script = document.createElement("script");
         const timeout = setTimeout(() => {
@@ -152,11 +193,7 @@
           script.remove();
         }
 
-        window[callback] = (result) => {
-          cleanup();
-          resolve(result);
-        };
-
+        window[callback] = (result) => { cleanup(); resolve(result); };
         script.onerror = () => {
           cleanup();
           reject(new Error("Could not reach the attendance server."));
@@ -167,6 +204,20 @@
       });
     }
 
+    /* ---------- Tabs ---------- */
+    async function showTab(name) {
+      const scanning = name === "scan";
+      if (!scanning) await stopScanner();   // free the camera when leaving Scan
+      scanPanel.hidden = !scanning;
+      addPanel.hidden = scanning;
+      tabScan.setAttribute("aria-selected", scanning);
+      tabAdd.setAttribute("aria-selected", !scanning);
+      if (!scanning) studentName.focus();
+    }
+    tabScan.addEventListener("click", () => showTab("scan"));
+    tabAdd.addEventListener("click", () => showTab("add"));
+
+    /* ---------- Login ---------- */
     loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
 
@@ -178,10 +229,7 @@
       loginMessage.className = "info";
 
       try {
-        const result = await requestServer({
-          action: "login",
-          pin: code
-        });
+        const result = await requestServer({ action: "login", pin: code });
 
         if (!result.success) {
           loginMessage.textContent = result.message || "Access denied.";
@@ -193,6 +241,8 @@
         accessCode.value = "";
         loginSection.hidden = true;
         scannerSection.hidden = false;
+        logoutButton.hidden = false;
+        showTab("scan");
         showMessage("Choose a class to get started.", "info");
       } catch (error) {
         loginMessage.textContent = error.message;
@@ -202,6 +252,7 @@
       }
     });
 
+    /* ---------- Scanner ---------- */
     startButton.addEventListener("click", async () => {
       if (!classSelect.value) {
         showMessage("Please select a class first.", "error");
@@ -238,19 +289,14 @@
                   "success"
                 );
               } else {
-                showMessage(
-                  result.message || "Attendance was not recorded.",
-                  "error"
-                );
+                showMessage(result.message || "Attendance was not recorded.", "error");
               }
             } catch (error) {
               showMessage(error.message, "error");
             } finally {
               setTimeout(() => {
                 busy = false;
-                if (scanner) {
-                  showMessage("Ready to scan the next QR code.", "info");
-                }
+                if (scanner) showMessage("Ready to scan the next QR code.", "info");
               }, 2000);
             }
           },
@@ -289,42 +335,20 @@
       await stopScanner();
       enteredCode = "";
       classSelect.value = "";
+      addStudentForm.reset();
       scannerSection.hidden = true;
+      logoutButton.hidden = true;
       loginSection.hidden = false;
       loginMessage.textContent = "You have logged out.";
       loginMessage.className = "info";
     });
-    const showAddStudentButton =
-      document.getElementById("showAddStudentButton");
-    const addStudentSection =
-      document.getElementById("addStudentSection");
-    const addStudentForm =
-      document.getElementById("addStudentForm");
-    const studentName =
-      document.getElementById("studentName");
-    const studentPhone =
-      document.getElementById("studentPhone");
-    const saveStudentButton =
-      document.getElementById("saveStudentButton");
-    const cancelAddStudentButton =
-      document.getElementById("cancelAddStudentButton");
-    const studentMessage =
-      document.getElementById("studentMessage");
 
-
-
-showAddStudentButton.addEventListener("click", () => {
-  addStudentSection.hidden = !addStudentSection.hidden;
-  showAddStudentButton.textContent = addStudentSection.hidden
-    ? "➕ Add New Student"
-    : "✖ Close";
-});
-
-
-
+    /* ---------- Add student ---------- */
     cancelAddStudentButton.addEventListener("click", () => {
       addStudentForm.reset();
-      addStudentSection.hidden = true;
+      studentMessage.textContent = "Enter the student's information.";
+      studentMessage.className = "info";
+      studentName.focus();
     });
 
     addStudentForm.addEventListener("submit", async (event) => {
@@ -334,8 +358,7 @@ showAddStudentButton.addEventListener("click", () => {
       const phone = studentPhone.value.trim();
 
       if (!name || !phone) {
-        studentMessage.textContent =
-          "Please enter the name and phone number.";
+        studentMessage.textContent = "Please enter the name and phone number.";
         studentMessage.className = "error";
         return;
       }
@@ -354,13 +377,12 @@ showAddStudentButton.addEventListener("click", () => {
 
         if (result.success) {
           studentMessage.textContent =
-            result.name + " was added successfully! " +
-            "The QR code is available in Google Sheets.";
+            result.name + " was added successfully! The QR code is available in Google Sheets.";
           studentMessage.className = "success";
           addStudentForm.reset();
+          studentName.focus();
         } else {
-          studentMessage.textContent =
-            result.message || "Could not add student.";
+          studentMessage.textContent = result.message || "Could not add student.";
           studentMessage.className = "error";
         }
       } catch (error) {
@@ -371,7 +393,5 @@ showAddStudentButton.addEventListener("click", () => {
       }
     });
   </script>
-    
-
 </body>
 </html>
